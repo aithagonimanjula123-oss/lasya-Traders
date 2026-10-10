@@ -539,8 +539,8 @@
 <script>
 /* ─── CONFIG ─── */
 const API_BASE = window.LASYA_API_BASE || '/api';
-let authToken = localStorage.getItem('lt_auth_token') || '';
-let currentRole = localStorage.getItem('lt_auth_role') || '';
+let authToken = sessionStorage.getItem('lt_auth_token') || '';
+let currentRole = sessionStorage.getItem('lt_auth_role') || '';
 
 /* ─── STATE ─── */
 let products         = [];
@@ -566,7 +566,7 @@ async function handleLogin(role){
   const session=await apiFetch('/auth/login',{method:'POST',body:JSON.stringify({role:role==='owner'?'owner':'staff',email,password})},false);
   if(!session||!session.token){showToast('Sign-in failed. Check credentials and connection.');return;}
   authToken=session.token; currentRole=session.user.role;
-  localStorage.setItem('lt_auth_token',authToken); localStorage.setItem('lt_auth_role',currentRole);
+  sessionStorage.setItem('lt_auth_token',authToken); sessionStorage.setItem('lt_auth_role',currentRole);
   currentOwnerStore=email.split('@')[0];
   await loadProducts();
   await loadOrders();
@@ -578,7 +578,7 @@ async function handleLogin(role){
 }
 
 function logout(){
-  authToken=''; currentRole=''; localStorage.removeItem('lt_auth_token'); localStorage.removeItem('lt_auth_role');
+  authToken=''; currentRole=''; sessionStorage.removeItem('lt_auth_token'); sessionStorage.removeItem('lt_auth_role');
   cart={};
   closeCart();
   updateCartRibbon();
