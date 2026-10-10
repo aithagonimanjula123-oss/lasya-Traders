@@ -275,6 +275,7 @@
     @media(max-width:900px){.landing-hero{grid-template-columns:1fr}.hero-story{padding:3rem 2rem}.hero-logins{padding:3rem 2rem}.emp-layout{grid-template-columns:1fr}.form-card{position:static}.stat-strip{grid-template-columns:1fr 1fr}.hero-headline{font-size:2.6rem}.daily-summary-row{grid-template-columns:1fr 1fr}}
     @media(max-width:600px){.landing-topbar{padding:1rem 1.25rem}.dash-body{padding:1.5rem 1rem}.stat-strip{grid-template-columns:1fr}.cart-sidebar{width:100%}.daily-summary-row{grid-template-columns:1fr}}
   </style>
+  <link rel="stylesheet" href="/premium.css">
 </head>
 <body>
 
@@ -537,7 +538,9 @@
 <!-- ══════════════════ JAVASCRIPT ══════════════════ -->
 <script>
 /* ─── CONFIG ─── */
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = window.LASYA_API_BASE || '/api';
+let authToken = localStorage.getItem('lt_auth_token') || '';
+let currentRole = localStorage.getItem('lt_auth_role') || '';
 
 /* ─── STATE ─── */
 let products         = [];
@@ -557,23 +560,25 @@ function showPage(id){
 }
 
 async function handleLogin(role){
+  const email=(document.getElementById(role==='owner'?'owner-email':'emp-email').value||'').trim();
+  const password=document.getElementById(role==='owner'?'owner-pass':'emp-pass').value||'';
+  if(!email||!password){showToast('Enter your email and password');return;}
+  const session=await apiFetch('/auth/login',{method:'POST',body:JSON.stringify({role:role==='owner'?'owner':'staff',email,password})},false);
+  if(!session||!session.token){showToast('Sign-in failed. Check credentials and connection.');return;}
+  authToken=session.token; currentRole=session.user.role;
+  localStorage.setItem('lt_auth_token',authToken); localStorage.setItem('lt_auth_role',currentRole);
+  currentOwnerStore=email.split('@')[0];
   await loadProducts();
   await loadOrders();
   if(role==='owner'){
-    const email = document.getElementById('owner-email').value.trim();
-    currentOwnerStore = email ? email.split('@')[0] : 'Demo Store';
-    renderOwnerGrid();
-    renderOwnerOrders();
-    showPage('page-owner');
-  } else {
-    renderEmpDashboard();
-    renderEmpOrders();
-    renderInventory();
-    showPage('page-employee');
+    renderOwnerGrid(); renderOwnerOrders(); showPage('page-owner');
+  }else{
+    renderEmpDashboard(); renderEmpOrders(); renderInventory(); showPage('page-employee');
   }
 }
 
 function logout(){
+  authToken=''; currentRole=''; localStorage.removeItem('lt_auth_token'); localStorage.removeItem('lt_auth_role');
   cart={};
   closeCart();
   updateCartRibbon();
@@ -608,10 +613,15 @@ function switchEmpTab(btn,tabId){
 /* ════════════════════════════════════════
    API HELPERS
 ════════════════════════════════════════ */
-async function apiFetch(path,options={}){
+async function apiFetch(path,options={},useAuth=true){
   try{
-    const res=await fetch(API_BASE+path,{headers:{'Content-Type':'application/json'},...options});
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    const headers={'Content-Type':'application/json',...(options.headers||{})};
+    if(useAuth&&authToken) headers.Authorization='Bearer '+authToken;
+    const res=await fetch(API_BASE+path,{...options,headers});
+    if(!res.ok){
+      if(res.status===401&&useAuth){authToken='';currentRole='';localStorage.removeItem('lt_auth_token');localStorage.removeItem('lt_auth_role');}
+      throw new Error('HTTP '+res.status);
+    }
     return await res.json();
   }catch(e){console.warn('API:',e.message);return null;}
 }
