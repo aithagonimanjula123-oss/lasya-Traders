@@ -1,0 +1,19 @@
+/* Lasya Traders premium polish — additive, keeps existing workflows and palette. */
+:root{--lt-shadow:0 18px 50px rgba(26,18,8,.08);--lt-radius:18px}
+html{scroll-behavior:smooth}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,select,textarea{font:inherit}
+button{transition:transform .18s ease,box-shadow .18s ease,filter .18s ease}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(232,131,42,.65);outline-offset:3px}
+button:hover{filter:brightness(1.025)}
+button:active{transform:translateY(1px)}
+.page.active{animation:lt-enter .28s ease both}
+.landing-topbar{position:sticky;top:0;z-index:20;box-shadow:0 4px 20px rgba(26,18,8,.025)}
+.logo-mark,.lc,.form-card,.stat-card,.product-card,.order-card,.dash-card{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.lc:hover,.form-card:hover,.stat-card:hover,.product-card:hover,.order-card:hover,.dash-card:hover{box-shadow:var(--lt-shadow)}
+.lc{border-radius:var(--lt-radius)}
+input,select,textarea{max-width:100%;border-radius:10px}
+img{max-width:100%;height:auto}
+@keyframes lt-enter{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@media(max-width:600px){.hero-story{padding:2.5rem 1.25rem!important}.hero-headline{font-size:clamp(2.15rem,10vw,3rem)!important}.hero-logins{padding:2.25rem 1.25rem!important}.landing-topbar{gap:.75rem}.brand-name{font-size:1.35rem}.brand-tagline{letter-spacing:.08em;font-size:.58rem}.lc{padding:1.25rem!important}}
