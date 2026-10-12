@@ -465,8 +465,8 @@
           <div class="lc-title">Grocery Store Owner</div>
           <div class="lc-desc">Browse our wholesale catalogue and place cash-on-delivery orders for your store.</div>
           <div class="lc-fields">
-            <input class="lc-input" type="email" placeholder="Store email" id="oe" autocomplete="off"/>
-            <input class="lc-input" type="password" placeholder="Password" id="op"/>
+            <input class="lc-input" type="email" placeholder="Store email" id="oe" autocomplete="email"/>
+            
           </div>
           <button class="lc-btn" onclick="login('owner')">Enter Client Portal →</button>
         </div>
@@ -1135,12 +1135,14 @@ async function renderOrders(){
     </div>`).join('');
 }
 async function chStatus(id,status){
-  await updateOrder(id,{status});
+  const ok=await updateOrder(id,{status});
+  if(!ok)return;
   toast('Order #'+id+' → '+status,'success');
-  renderOrders();renderDashboard();
+  renderOrders();renderDashboard();renderRevenue();
 }
 async function markCash(id){
-  await updateOrder(id,{status:'Cash Collected',cashCollected:true});
+  const ok=await updateOrder(id,{status:'Cash Collected',cashCollected:true});
+  if(!ok)return;
   toast('Cash collected for Order #'+id+' ✓','success');
   renderOrders();renderDashboard();renderRevenue();
 }
