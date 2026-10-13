@@ -457,22 +457,32 @@
     </div>
 
     <div class="land-login">
-      <div class="login-label">Secure administration</div>
+      <div class="login-label">Choose your portal</div>
       <div class="login-cards">
+        <div class="lc lc-a">
+          <div class="lc-shine"></div>
+          <div class="lc-role">Role A · Client</div>
+          <div class="lc-title">Grocery Store Owner</div>
+          <div class="lc-desc">Browse our wholesale catalogue and place cash-on-delivery orders for your store.</div>
+          <div class="lc-fields">
+            <input class="lc-input" type="email" placeholder="Store email" id="oe" autocomplete="email"/>
+            
+          </div>
+          <button class="lc-btn" onclick="login('owner')">Enter Client Portal →</button>
+        </div>
         <div class="lc lc-b">
           <div class="lc-shine"></div>
-          <div class="lc-role">Restricted access · Admin only</div>
-          <div class="lc-title">Inventory Admin</div>
-          <div class="lc-desc">Sign in with the authorised admin credentials to manage products, stock, orders, and revenue.</div>
+          <div class="lc-role">Role B · Staff</div>
+          <div class="lc-title">Lasya Traders Employee</div>
+          <div class="lc-desc">Manage inventory, track revenue, and handle all client orders.</div>
           <div class="lc-fields">
-            <input class="lc-input" type="email" placeholder="Admin email" id="ae" autocomplete="username"/>
-            <input class="lc-input" type="password" placeholder="Admin password" id="ap" autocomplete="current-password"/>
+            <input class="lc-input" type="email" placeholder="Employee email" id="ee" autocomplete="off"/>
+            <input class="lc-input" type="password" placeholder="Password" id="ep"/>
           </div>
-          <button class="lc-btn" onclick="login('admin')">Sign in to Admin Portal →</button>
+          <button class="lc-btn" onclick="login('employee')">Enter Employee Portal →</button>
         </div>
-        <button class="lc-btn" style="background:var(--emerald);color:#fff" onclick="openCatalogue()">Browse Public Catalogue →</button>
       </div>
-      <div class="demo-note">Browsing and ordering do not require an account. Inventory changes require admin authentication.</div>
+      <div class="demo-note">Client catalogue is public. Staff access requires authorised credentials.</div>
     </div>
   </div>
 </div>
@@ -488,13 +498,14 @@
       <span class="nav-title">Lasya Traders — Client Portal</span>
     </div>
     <div class="nav-right">
-      <span class="nav-badge nb-owner">Public Catalogue</span>
-      <button class="nav-logout" onclick="showPage('page-landing')">Admin Sign-in</button>
+      <span class="nav-badge nb-owner">Store Owner</span>
+      <button class="nav-logout" onclick="logout()">Log Out</button>
     </div>
   </nav>
   <div class="dash-body">
     <div class="tab-nav">
       <button class="tab-btn active" onclick="switchTab('owner',this,'ot-browse')">🛍 Browse Products</button>
+      <button class="tab-btn" id="owner-ord-tab" onclick="switchTab('owner',this,'ot-orders')">📦 My Orders</button>
     </div>
 
     <div class="tab-panel active" id="ot-browse">
@@ -515,6 +526,11 @@
       <div class="prod-grid" id="prod-grid"></div>
     </div>
 
+    <div class="tab-panel" id="ot-orders">
+      <div class="sec-title">My Orders</div>
+      <div class="sec-sub">All orders placed — cash collected on delivery</div>
+      <div id="owner-ord-list"></div>
+    </div>
   </div>
 
   <div class="cart-ribbon" id="cart-ribbon">
@@ -534,10 +550,10 @@
     <nav class="dash-nav" style="background:rgba(15,12,7,.97);border-bottom:1px solid rgba(212,168,67,.15)">
       <div class="nav-brand">
         <div class="nav-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 4v12h12M4 10h7" stroke="#1a1208" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <span class="nav-title">Lasya Traders — Admin Portal</span>
+        <span class="nav-title">Lasya Traders — Employee Portal</span>
       </div>
       <div class="nav-right">
-        <span class="nav-badge nb-emp">Admin</span>
+        <span class="nav-badge nb-emp">Employee</span>
         <button class="nav-logout" onclick="logout()">Log Out</button>
       </div>
     </nav>
@@ -742,36 +758,35 @@ function showPage(id){
   document.getElementById(id).classList.add('active');
 }
 
-async function openCatalogue(){
-  authToken=null;
-  storeName='Public customer';
-  document.getElementById('s-name').value=storeName;
-  orders=[];
-  const loaded=await loadProducts();
-  if(!loaded){toast('Catalogue could not be loaded. Please try again when the server is online.','error');return;}
-  renderGrid();
-  showPage('page-owner');
-}
-
 async function login(role){
-  if(role!=='admin'){openCatalogue();return;}
-  const email=document.getElementById('ae').value.trim();
-  const password=document.getElementById('ap').value;
-  if(!email||!password){toast('Enter the authorised admin email and password.','error');return;}
-  const auth=await apiFetch('/auth/login',{method:'POST',body:JSON.stringify({email,password})});
-  if(!auth||!auth.token){toast('Admin sign-in failed. Check credentials or server configuration.','error');return;}
-  authToken=auth.token;
+  if(role==='employee'){
+    const email=document.getElementById('ee').value.trim();
+    const password=document.getElementById('ep').value;
+    if(!email||!password){toast('Enter your staff email and password.','error');return;}
+    const auth=await apiFetch('/auth/login',{method:'POST',body:JSON.stringify({email,password})});
+    if(!auth||!auth.token){toast('Staff sign-in failed. Check credentials or server configuration.','error');return;}
+    authToken=auth.token;
+  }else{
+    const email=document.getElementById('oe').value.trim();
+    if(!email){toast('Enter your store email.','error');return;}
+    storeName=email.split('@')[0];
+    document.getElementById('s-name').value=storeName;
+    orders=[];
+  }
   const productsLoaded=await loadProducts();
   if(!productsLoaded){toast('Catalogue could not be loaded. Please try again when the server is online.','error');authToken=null;return;}
-  const loaded=await loadOrders();
-  if(!loaded){authToken=null;toast('Could not load admin data. Please sign in again later.','error');return;}
-  renderDashboard();renderOrders();renderRevenue();renderInv();showPage('page-employee');
+  if(role==='employee'){
+    const loaded=await loadOrders();
+    if(!loaded){authToken=null;toast('Could not load staff data. Please sign in again later.','error');return;}
+    renderDashboard();renderOrders();renderRevenue();renderInv();showPage('page-employee');
+  } else {
+    renderGrid();renderOwnerOrders();showPage('page-owner');
+  }
 }
 
 function logout(){
-  authToken=null;
   cart={};closeCart();updateRibbon();
-  activeCat='all';orders=[];storeName='';
+  activeCat='all';
   document.querySelectorAll('#pill-row .pill').forEach(p=>p.classList.remove('active'));
   const a=document.querySelector('#pill-row .pill[data-c="all"]');
   if(a)a.classList.add('active');
