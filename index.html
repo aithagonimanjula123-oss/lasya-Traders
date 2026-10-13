@@ -775,7 +775,8 @@ async function login(role){
   } else {
     storeName=email.split('@')[0];
     document.getElementById('s-name').value=storeName;
-    orders=[];
+    const loaded=await loadOrders();
+    if(!loaded){authToken=null;toast('Could not load your orders. Please sign in again later.','error');return;}
     renderGrid();renderOwnerOrders();showPage('page-owner');
   }
 }
