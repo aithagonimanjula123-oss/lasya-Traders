@@ -465,24 +465,24 @@
           <div class="lc-title">Grocery Store Owner</div>
           <div class="lc-desc">Browse our wholesale catalogue and place cash-on-delivery orders for your store.</div>
           <div class="lc-fields">
-            <input class="lc-input" type="email" placeholder="Store email" id="oe" autocomplete="email"/>
-            
+            <input class="lc-input" type="email" placeholder="Authorised store Gmail" id="oe" autocomplete="username"/>
+            <input class="lc-input" type="password" placeholder="Password" id="op" autocomplete="current-password"/>
           </div>
-          <button class="lc-btn" onclick="login('owner')">Enter Client Portal →</button>
+          <button class="lc-btn" onclick="login('owner')">Sign In to Store Portal →</button>
         </div>
         <div class="lc lc-b">
           <div class="lc-shine"></div>
-          <div class="lc-role">Role B · Staff</div>
-          <div class="lc-title">Lasya Traders Employee</div>
-          <div class="lc-desc">Manage inventory, track revenue, and handle all client orders.</div>
+          <div class="lc-role">Role B · Admin</div>
+          <div class="lc-title">Admin Panel</div>
+          <div class="lc-desc">Manage inventory, prices, orders, and revenue. Only approved accounts can sign in.</div>
           <div class="lc-fields">
-            <input class="lc-input" type="email" placeholder="Employee email" id="ee" autocomplete="off"/>
-            <input class="lc-input" type="password" placeholder="Password" id="ep"/>
+            <input class="lc-input" type="email" placeholder="Authorised admin Gmail" id="ee" autocomplete="username"/>
+            <input class="lc-input" type="password" placeholder="Admin password" id="ep" autocomplete="current-password"/>
           </div>
           <button class="lc-btn" onclick="login('employee')">Enter Employee Portal →</button>
         </div>
       </div>
-      <div class="demo-note">Client catalogue is public. Staff access requires authorised credentials.</div>
+      <div class="demo-note">Client catalogue is public. Store owner and admin access require approved Gmail IDs and passwords. No public sign-up.</div>
     </div>
   </div>
 </div>
@@ -759,32 +759,30 @@ function showPage(id){
 }
 
 async function login(role){
-  if(role==='employee'){
-    const email=document.getElementById('ee').value.trim();
-    const password=document.getElementById('ep').value;
-    if(!email||!password){toast('Enter your staff email and password.','error');return;}
-    const auth=await apiFetch('/auth/login',{method:'POST',body:JSON.stringify({email,password})});
-    if(!auth||!auth.token){toast('Staff sign-in failed. Check credentials or server configuration.','error');return;}
-    authToken=auth.token;
-  }else{
-    const email=document.getElementById('oe').value.trim();
-    if(!email){toast('Enter your store email.','error');return;}
+  const isAdmin=role==='employee';
+  const email=document.getElementById(isAdmin?'ee':'oe').value.trim().toLowerCase();
+  const password=document.getElementById(isAdmin?'ep':'op').value;
+  if(!email||!password){toast('Enter your approved Gmail ID and password.','error');return;}
+  const auth=await apiFetch('/auth/login',{method:'POST',body:JSON.stringify({email,password,role:isAdmin?'admin':'owner'})});
+  if(!auth||!auth.token){toast('Sign-in failed. Use an approved Gmail ID and password. Self-registration is disabled.','error');return;}
+  authToken=auth.token;
+  const productsLoaded=await loadProducts();
+  if(!productsLoaded){toast('Catalogue could not be loaded. Please try again when the server is online.','error');authToken=null;return;}
+  if(isAdmin){
+    const loaded=await loadOrders();
+    if(!loaded){authToken=null;toast('Could not load admin data. Please sign in again later.','error');return;}
+    renderDashboard();renderOrders();renderRevenue();renderInv();showPage('page-employee');
+  } else {
     storeName=email.split('@')[0];
     document.getElementById('s-name').value=storeName;
     orders=[];
-  }
-  const productsLoaded=await loadProducts();
-  if(!productsLoaded){toast('Catalogue could not be loaded. Please try again when the server is online.','error');authToken=null;return;}
-  if(role==='employee'){
-    const loaded=await loadOrders();
-    if(!loaded){authToken=null;toast('Could not load staff data. Please sign in again later.','error');return;}
-    renderDashboard();renderOrders();renderRevenue();renderInv();showPage('page-employee');
-  } else {
     renderGrid();renderOwnerOrders();showPage('page-owner');
   }
 }
 
 function logout(){
+  authToken=null;
+  ['oe','op','ee','ep'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   cart={};closeCart();updateRibbon();
   activeCat='all';
   document.querySelectorAll('#pill-row .pill').forEach(p=>p.classList.remove('active'));
