@@ -815,7 +815,7 @@ async function apiFetch(path,opts={}){
 }
 async function loadProducts(){
   const d=await apiFetch('/products');
-  if(Array.isArray(d)){products=d;setApi('online');applyLocalDiscounts();return true;}
+  if(Array.isArray(d)){products=d;setApi('online');return true;}
   products=[];setApi('offline');return false;
 }
 async function loadOrders(){
@@ -826,8 +826,7 @@ async function loadOrders(){
 async function saveProduct(p){
   const saved=await apiFetch('/products',{method:'POST',body:JSON.stringify(p)});
   if(!saved||!saved.id){toast('Product was not saved. Server unavailable or access denied.','error');return false;}
-  if(p.discountType&&!saved.discountType){saved.discountType=p.discountType;saved.discountValue=p.discountValue;}
-  products.push(saved);saveDiscLocal(saved);toast('Product saved ✓','success');return true;
+  products.push(saved);toast('Product saved ✓','success');return true;
 }
 async function deleteProductAPI(id){
   const result=await apiFetch('/products/'+encodeURIComponent(id),{method:'DELETE'});
@@ -868,15 +867,11 @@ async function syncProductsFromServer(){
     const currentById = new Map(products.map(p => [String(p.id), p]));
     const next = incoming.map(p => {
       const old = currentById.get(String(p.id)) || {};
-      return {
-        ...old, ...p,
-        discountType: old.discountType || p.discountType,
-        discountValue: old.discountValue ?? p.discountValue
-      };
+      return { ...old, ...p };
     });
     const signature = JSON.stringify(next.map(p => ({
       id:p.id, name:p.name, category:p.category, price:p.price, stock:p.stock,
-      imageUrl:p.imageUrl, updatedAt:p.updatedAt
+      imageUrl:p.imageUrl, discountType:p.discountType, discountValue:p.discountValue, updatedAt:p.updatedAt
     })));
     if(signature === lastProductSyncSignature) return;
     lastProductSyncSignature = signature;
