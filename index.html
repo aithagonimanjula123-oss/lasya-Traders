@@ -778,13 +778,17 @@ async function login(role){
       products=[];
     }
     const ordersLoaded=await loadOrders();
-    if(!ordersLoaded)toast('Signed in; order data is temporarily unavailable.','error');
+    if(!ordersLoaded)toast('Signed in. Order data is unavailable right now, but you can still use the portal.','error');
     if(isAdmin){
-      renderDashboard();renderOrders();renderRevenue();renderInv();showPage('page-employee');
+      try{renderDashboard();renderOrders();renderRevenue();renderInv();}
+      catch(e){console.warn('Some admin data could not render:',e.message);}
+      showPage('page-employee');
     } else {
       storeName=email.split('@')[0];
       document.getElementById('s-name').value=storeName;
-      renderGrid();renderOwnerOrders();showPage('page-owner');
+      try{renderGrid();renderOwnerOrders();}
+      catch(e){console.warn('Some owner data could not render:',e.message);}
+      showPage('page-owner');
     }
   }finally{
     loginInProgress=false;
@@ -827,16 +831,25 @@ async function apiFetch(path,opts={}){
   try{
     const headers={'Content-Type':'application/json',...(opts.headers||{})};
     if(authToken)headers.Authorization='Bearer '+authToken;
-    const r=await fetch(API+path,{...opts,headers});
+    const requestOptions={...opts,headers};
+    if(!requestOptions.signal && typeof AbortSignal!=='undefined' && AbortSignal.timeout){
+      requestOptions.signal=AbortSignal.timeout(7000);
+    }
+    const r=await fetch(API+path,requestOptions);
     const data=await r.json().catch(()=>null);
     if(!r.ok){
       const message=data&&data.message?data.message:'HTTP '+r.status;
       console.warn('API:',message);
+      if(path==='/orders')console.warn('Order request failed; portal will continue without order data.');
       toast(message,'error');
       return null;
     }
     return data;
-  }catch(e){console.warn('API unavailable:',e.message);setApi('offline');return null;}
+  }catch(e){
+    console.warn('API unavailable:',e.message);
+    setApi('offline');
+    return null;
+  }
 }
 async function loadProducts(){
   const d=await apiFetch('/products');
@@ -844,9 +857,12 @@ async function loadProducts(){
   products=[];setApi('offline');return false;
 }
 async function loadOrders(){
-  const d=await apiFetch('/orders');
-  if(Array.isArray(d))orders=d;else orders=[];
-  return Array.isArray(d);
+  try{
+    const d=await apiFetch('/orders');
+    if(Array.isArray(d)){orders=d;return true;}
+  }catch(e){console.warn('Orders unavailable; continuing without them.',e.message);}
+  orders=[];
+  return false;
 }
 async function saveProduct(p){
   const saved=await apiFetch('/products',{method:'POST',body:JSON.stringify(p)});
