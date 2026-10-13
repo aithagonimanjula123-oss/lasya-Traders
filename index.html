@@ -758,26 +758,37 @@ function showPage(id){
   document.getElementById(id).classList.add('active');
 }
 
+let loginInProgress = false;
 async function login(role){
+  if(loginInProgress)return;
   const isAdmin=role==='employee';
   const email=document.getElementById(isAdmin?'ee':'oe').value.trim().toLowerCase();
   const password=document.getElementById(isAdmin?'ep':'op').value;
-  if(!email||!password){toast('Enter an email/username and any password.','error');return;}
-  const auth=await apiFetch('/auth/login',{method:'POST',body:JSON.stringify({email,password,role:isAdmin?'admin':'owner'})});
-  if(!auth||!auth.token){toast('Could not open the panel. Please try again.','error');return;}
-  authToken=auth.token;
-  const productsLoaded=await loadProducts();
-  if(!productsLoaded){toast('Catalogue could not be loaded. Please try again when the server is online.','error');authToken=null;return;}
-  if(isAdmin){
-    const loaded=await loadOrders();
-    if(!loaded){authToken=null;toast('Could not load admin data. Please sign in again later.','error');return;}
-    renderDashboard();renderOrders();renderRevenue();renderInv();showPage('page-employee');
-  } else {
-    storeName=email.split('@')[0];
-    document.getElementById('s-name').value=storeName;
-    const loaded=await loadOrders();
-    if(!loaded){authToken=null;toast('Could not load your orders. Please sign in again later.','error');return;}
-    renderGrid();renderOwnerOrders();showPage('page-owner');
+  if(!email||!password){toast('Enter any email/username and any password.','error');return;}
+  loginInProgress=true;
+  const buttons=[...document.querySelectorAll('.lc-btn')];
+  buttons.forEach(b=>b.disabled=true);
+  try{
+    const auth=await apiFetch('/auth/login',{method:'POST',body:JSON.stringify({email,password,role:isAdmin?'admin':'owner'})});
+    if(!auth||!auth.token){toast('Login API is not responding. Please try again.','error');return;}
+    authToken=auth.token;
+    const productsLoaded=await loadProducts();
+    if(!productsLoaded){
+      toast('Signed in, but the catalogue API is unavailable. Check the server connection.','error');
+      products=[];
+    }
+    const ordersLoaded=await loadOrders();
+    if(!ordersLoaded)toast('Signed in; order data is temporarily unavailable.','error');
+    if(isAdmin){
+      renderDashboard();renderOrders();renderRevenue();renderInv();showPage('page-employee');
+    } else {
+      storeName=email.split('@')[0];
+      document.getElementById('s-name').value=storeName;
+      renderGrid();renderOwnerOrders();showPage('page-owner');
+    }
+  }finally{
+    loginInProgress=false;
+    buttons.forEach(b=>b.disabled=false);
   }
 }
 
