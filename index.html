@@ -984,8 +984,9 @@ function renderGrid(){
       <div class="prod-img">${imgH}<span class="prod-cat-tag ${cTagCls(p.category)}">${esc(p.category)}</span>${hasDisc(p)?`<span class="disc-tag">${discLabel(p)}</span>`:''}</div>
       <div class="prod-body">
         <div class="prod-name">${esc(p.name)}</div>
-        <div class="prod-price">₹${effPrice(p).toFixed(2)}${hasDisc(p)?`<span class="prod-old">₹${Number(p.price).toFixed(2)}</span>`:''}</div>
-        <div class="prod-stock">In stock: ${p.stock} units</div>
+        <div class="prod-price">₹${effPrice(p).toFixed(2)}${hasDisc(p)?`<span class="prod-old">₹${Number(p.sellPrice??p.price).toFixed(2)}</span>`:''}</div>
+        ${p.mrp!==null&&p.mrp!==undefined? `<div class="prod-stock">MRP: ₹${Number(p.mrp).toFixed(2)}</div>`:''}
+        <div class="prod-stock">In stock: ${p.stock} units${p.unitCase?' · '+esc(p.unitCase):''}</div>
         ${p.stock>0?`
         <div class="qty-row">
           <button class="qty-btn" onclick="chQty(${p.id},-1)">−</button>
@@ -1432,7 +1433,7 @@ function renderInv(){
   const list=products.filter(p=>!q||p.name.toLowerCase().includes(q)||p.category.toLowerCase().includes(q));
   document.getElementById('inv-badge').textContent=products.length+' product'+(products.length!==1?'s':'');
   const tbody=document.getElementById('inv-body');
-  if(!list.length){tbody.innerHTML=`<tr><td colspan="5" class="empty-td">No products found.</td></tr>`;return;}
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="11" class="empty-td">No products found.</td></tr>`;return;}
   tbody.innerHTML=list.map(p=>`
     <tr>
       <td><span style="margin-right:6px">${cEmoji(p.category)}</span><strong>${esc(p.name)}</strong></td>
