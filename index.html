@@ -846,6 +846,59 @@ async function updateOrder(id,body){
   if(index>=0)orders[index]={...orders[index],...updated};
   return true;
 }
+let productSyncInFlight = false;
+let lastProductSyncSignature = '';
+
+async function syncProductsFromServer(){
+  const activePortal = document.querySelector('#page-owner.active, #page-employee.active');
+  if(!activePortal || productSyncInFlight || document.visibilityState === 'hidden') return;
+  productSyncInFlight = true;
+  try{
+    const response = await fetch(API + '/products', {
+      method: 'GET',
+      cache: 'no-store',
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(5000)
+    });
+    if(!response.ok) return;
+    const incoming = await response.json();
+    if(!Array.isArray(incoming)) return;
+
+    // Preserve device-local discount metadata while syncing the canonical product fields from the server.
+    const currentById = new Map(products.map(p => [String(p.id), p]));
+    const next = incoming.map(p => {
+      const old = currentById.get(String(p.id)) || {};
+      return {
+        ...old, ...p,
+        discountType: old.discountType || p.discountType,
+        discountValue: old.discountValue ?? p.discountValue
+      };
+    });
+    const signature = JSON.stringify(next.map(p => ({
+      id:p.id, name:p.name, category:p.category, price:p.price, stock:p.stock,
+      imageUrl:p.imageUrl, updatedAt:p.updatedAt
+    })));
+    if(signature === lastProductSyncSignature) return;
+    lastProductSyncSignature = signature;
+    products = next;
+
+    // Remove cart lines for deleted products and prevent quantities exceeding new stock.
+    for(const id of Object.keys(cart)){
+      const p = products.find(item => String(item.id) === String(id));
+      if(!p || Number(p.stock) <= 0) delete cart[id];
+      else if(cart[id] > Number(p.stock)) cart[id] = Number(p.stock);
+    }
+    if(document.getElementById('page-owner')?.classList.contains('active')) renderGrid();
+    if(document.getElementById('page-employee')?.classList.contains('active')) renderInv();
+    updateRibbon();
+  }catch(error){
+    // Quietly retry on the next interval; transient network errors should not spam the user.
+    console.debug('Product sync will retry:', error?.message || error);
+  }finally{
+    productSyncInFlight = false;
+  }
+}
+
 async function checkApi(){
   try{const r=await fetch(API+'/health',{signal:AbortSignal.timeout(5000)});if(r.ok){setApi('online');return;}}catch(_){}
   setApi('offline');
@@ -1412,7 +1465,7 @@ function lastNDays(n){
    INIT
 ───────────────────────────────────────── */
 checkApi();
-setInterval(checkApi,12000);
+setInterval(checkApi,12000);\nsetInterval(syncProductsFromServer,3000);\ndocument.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncProductsFromServer();});
 </script>
 </body>
 </html>
