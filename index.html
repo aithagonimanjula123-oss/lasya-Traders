@@ -676,8 +676,24 @@
             </select>
           </div>
           <div class="frow">
-            <div class="fg"><label class="fl">Price (₹) *</label><input class="finp" type="number" id="f-price" placeholder="0.00" min="0" step="0.01" oninput="updateDiscPreview()"/></div>
-            <div class="fg"><label class="fl">Stock *</label><input class="finp" type="number" id="f-stock" placeholder="0" min="0"/></div>
+            <div class="fg"><label class="fl">Base Price (₹) *</label><input class="finp" type="number" id="f-price" placeholder="0.00" min="0" step="0.01" oninput="updateDiscPreview()"/></div>
+            <div class="fg"><label class="fl">Stock *</label><input class="finp" type="number" id="f-stock" placeholder="0" min="0" step="1"/></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">Unit / Case</label><input class="finp" type="text" id="f-unit-case" placeholder="e.g. 1 case = 24 pcs"/></div>
+            <div class="fg"><label class="fl">Retail Price (₹)</label><input class="finp" type="number" id="f-retail" placeholder="0.00" min="0" step="0.01"/></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">WH Price (₹)</label><input class="finp" type="number" id="f-wh" placeholder="Wholesale price" min="0" step="0.01"/></div>
+            <div class="fg"><label class="fl">Sell Price (₹)</label><input class="finp" type="number" id="f-sell" placeholder="Defaults to base price" min="0" step="0.01" oninput="updateDiscPreview()"/></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">Bulk Price (₹)</label><input class="finp" type="number" id="f-bulk" placeholder="0.00" min="0" step="0.01"/></div>
+            <div class="fg"><label class="fl">MRP (₹)</label><input class="finp" type="number" id="f-mrp" placeholder="0.00" min="0" step="0.01"/></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">Discount Price (₹)</label><input class="finp" type="number" id="f-discount-price" placeholder="Optional final price" min="0" step="0.01" oninput="updateDiscPreview()"/></div>
+            <div class="fg"><label class="fl">Image URL <span style="font-weight:400;color:#bbb;text-transform:none">(optional)</span></label><input class="finp" type="url" id="f-img" placeholder="https://…"/></div>
           </div>
           <div class="frow">
             <div class="fg"><label class="fl">Discount <span style="font-weight:400;color:#bbb;text-transform:none">(optional)</span></label>
@@ -690,7 +706,6 @@
             <div class="fg"><label class="fl">Discount Value</label><input class="finp" type="number" id="f-dval" placeholder="0" min="0" step="0.01" disabled oninput="updateDiscPreview()"/></div>
           </div>
           <div class="disc-prev" id="f-dprev"></div>
-          <div class="fg"><label class="fl">Image URL <span style="font-weight:400;color:#bbb;text-transform:none">(optional)</span></label><input class="finp" type="url" id="f-img" placeholder="https://…"/></div>
           <button class="f-sub" onclick="addProduct()">Add to Inventory</button>
           <div class="f-ok" id="f-ok">✅ Product added!</div>
         </div>
@@ -702,7 +717,7 @@
           <input class="inv-search" type="text" id="inv-q" placeholder="Filter by name or category…" oninput="renderInv()"/>
           <div style="overflow-x:auto;">
             <table class="inv-tbl">
-              <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th></th></tr></thead>
+              <thead><tr><th>Product</th><th>Category</th><th>Unit / Case</th><th>Retail ₹</th><th>WH ₹</th><th>Sell ₹</th><th>Bulk ₹</th><th>MRP ₹</th><th>Discount ₹</th><th>Stock</th><th></th></tr></thead>
               <tbody id="inv-body"></tbody>
             </table>
           </div>
@@ -913,6 +928,45 @@ function setCat(el,cat){
   el.classList.add('active');
   renderGrid();
 }
+function money(value){return value===null||value===undefined||value===''?'—':'₹'+Number(value).toFixed(2);}
+function hasDisc(p){
+  return (p.discountPrice!==null&&p.discountPrice!==undefined&&p.discountPrice!=='') ||
+    (p.discountType&&Number(p.discountValue)>0);
+}
+function effPrice(p){
+  if(p.discountPrice!==null&&p.discountPrice!==undefined&&p.discountPrice!=='') return Math.max(0,Number(p.discountPrice));
+  const base=Number(p.sellPrice??p.price??0);
+  if(p.discountType==='percent') return Math.max(0,base*(1-Number(p.discountValue||0)/100));
+  if(p.discountType==='flat') return Math.max(0,base-Number(p.discountValue||0));
+  return base;
+}
+function discLabel(p){
+  if(p.discountPrice!==null&&p.discountPrice!==undefined&&p.discountPrice!=='') return 'Discount price '+money(p.discountPrice);
+  return p.discountType==='percent'?Number(p.discountValue)+'% off':'₹'+Number(p.discountValue||0)+' off';
+}
+function onDiscType(){
+  const type=document.getElementById('f-dtype').value;
+  const value=document.getElementById('f-dval');
+  value.disabled=!type;
+  if(!type)value.value='';
+  updateDiscPreview();
+}
+function updateDiscPreview(){
+  const baseRaw=document.getElementById('f-sell')?.value || document.getElementById('f-price')?.value;
+  const base=Number(baseRaw);
+  const explicit=document.getElementById('f-discount-price')?.value;
+  const type=document.getElementById('f-dtype')?.value;
+  const val=Number(document.getElementById('f-dval')?.value);
+  const el=document.getElementById('f-dprev');
+  if(!el)return;
+  if(explicit!==''&&explicit!==undefined&&Number.isFinite(Number(explicit))&&Number(explicit)>=0){
+    el.textContent='Final discount price: '+money(Number(explicit));return;
+  }
+  if(!Number.isFinite(base)||base<0||!type||!Number.isFinite(val)||val<=0){el.textContent='';return;}
+  const final=type==='percent'?base*(1-val/100):base-val;
+  el.textContent=final>=0?'Discounted price: '+money(final):'Discount exceeds the sell price.';
+}
+
 function renderGrid(){
   const q=(document.getElementById('p-search').value||'').toLowerCase();
   const list=products.filter(p=>
@@ -1383,7 +1437,9 @@ function renderInv(){
     <tr>
       <td><span style="margin-right:6px">${cEmoji(p.category)}</span><strong>${esc(p.name)}</strong></td>
       <td><span class="c-badge ${cBadge(p.category)}">${esc(p.category)}</span></td>
-      <td>${hasDisc(p)?`<span class="inv-old">₹${Number(p.price).toFixed(2)}</span>₹${effPrice(p).toFixed(2)}<span class="inv-disc">${discLabel(p)}</span>`:`₹${Number(p.price).toFixed(2)}`}</td>
+      <td>${esc(p.unitCase||'—')}</td>
+      <td>${money(p.retailPrice)}</td><td>${money(p.whPrice)}</td><td><strong>${money(p.sellPrice??p.price)}</strong></td>
+      <td>${money(p.bulkPrice)}</td><td>${money(p.mrp)}</td><td>${money(p.discountPrice)}</td>
       <td class="${p.stock<20?'stk-lo':'stk-ok'}">${p.stock}${p.stock<20?' ⚠️':''}</td>
       <td><button class="del-btn" onclick="delProduct(${p.id})">Remove</button></td>
     </tr>`).join('');
@@ -1394,10 +1450,27 @@ async function addProduct(){
   const price=parseFloat(document.getElementById('f-price').value);
   const stock=parseInt(document.getElementById('f-stock').value,10);
   const img=document.getElementById('f-img').value.trim();
-  if(!name||!cat||isNaN(price)||price<0||isNaN(stock)||stock<0){toast('Fill all required fields.','error');return;}
+  const optionalNumber = id => {
+    const raw=document.getElementById(id).value.trim();
+    if(raw==='') return null;
+    const value=Number(raw);
+    return Number.isFinite(value)&&value>=0 ? value : NaN;
+  };
+  const retailPrice=optionalNumber('f-retail');
+  const whPrice=optionalNumber('f-wh');
+  const sellPrice=optionalNumber('f-sell');
+  const bulkPrice=optionalNumber('f-bulk');
+  const mrp=optionalNumber('f-mrp');
+  const discountPrice=optionalNumber('f-discount-price');
+  if(!name||!cat||!Number.isFinite(price)||price<0||!Number.isInteger(stock)||stock<0){toast('Enter a product name, category, valid base price, and whole-number stock.','error');return;}
+  if([retailPrice,whPrice,sellPrice,bulkPrice,mrp,discountPrice].some(v=>Number.isNaN(v))){toast('Prices must be zero or greater.','error');return;}
   const dtype=document.getElementById('f-dtype').value;
   const dval=parseFloat(document.getElementById('f-dval').value);
-  const prod={name,category:cat,price,stock,imageUrl:img||null};
+  const prod={
+    name,category:cat,price,stock,imageUrl:img||null,
+    unitCase:document.getElementById('f-unit-case').value.trim()||null,
+    retailPrice,whPrice,sellPrice:sellPrice==null?price:sellPrice,bulkPrice,mrp,discountPrice
+  };
   if(dtype){
     if(isNaN(dval)||dval<=0){toast('Enter a discount value.','error');return;}
     if(dtype==='percent'&&dval>100){toast('Percentage discount cannot exceed 100%.','error');return;}
@@ -1406,7 +1479,7 @@ async function addProduct(){
   }
   const saved=await saveProduct(prod);
   if(!saved)return;
-  ['f-name','f-cat','f-price','f-stock','f-img','f-dtype','f-dval'].forEach(id=>{document.getElementById(id).value='';});
+  ['f-name','f-cat','f-price','f-stock','f-unit-case','f-retail','f-wh','f-sell','f-bulk','f-mrp','f-discount-price','f-img','f-dtype','f-dval'].forEach(id=>{document.getElementById(id).value='';});
   onDiscType();
   const ok=document.getElementById('f-ok');ok.classList.add('show');setTimeout(()=>ok.classList.remove('show'),2500);
   renderInv();
