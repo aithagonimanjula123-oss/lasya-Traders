@@ -1534,7 +1534,9 @@ function lastNDays(n){
    INIT
 ───────────────────────────────────────── */
 checkApi();
-setInterval(checkApi,12000);\nsetInterval(syncProductsFromServer,3000);\ndocument.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncProductsFromServer();});
+setInterval(checkApi,12000);
+setInterval(syncProductsFromServer,3000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncProductsFromServer();});
 </script>
 </body>
 </html>
