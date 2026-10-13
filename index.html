@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Lasya Traders — Wholesale Supply Platform</title>
+  <title>Lasha Shop — Lasha Traders Shop Tandur</title>
+  <meta name="description" content="Lasha Traders Shop Tandur — wholesale grocery and store supplies in Tandur, Telangana." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
@@ -437,18 +438,18 @@
         <svg viewBox="0 0 28 28" fill="none"><path d="M7 5v18h14M7 14h9" stroke="#1a1208" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
       <div>
-        <div class="brand-text-name">Lasya <span>Traders</span></div>
-        <div class="brand-text-sub">Wholesale Grocery Supply</div>
+        <div class="brand-text-name">Lasha <span>Shop</span></div>
+        <div class="brand-text-sub">Lasha Traders Shop Tandur</div>
       </div>
     </div>
-    <div class="land-bar-right">Chennai, Tamil Nadu · Est. 2018</div>
+    <div class="land-bar-right">Tandur, Telangana</div>
   </header>
 
   <div class="land-grid">
     <div class="land-story">
       <div class="land-eyebrow">Trusted by 500+ Grocery Stores</div>
       <h1 class="land-h1">Quality<br/><em>wholesale,</em><br/>delivered right.</h1>
-      <p class="land-p">Lasya Traders supplies grocery stores with premium wholesale goods — soaps, chocolates, beverages, and household accessories — at the best prices, every time.</p>
+      <p class="land-p">Lasha Traders Shop Tandur supplies grocery stores with wholesale goods, clear pricing, and convenient ordering.</p>
       <div class="chip-row">
         <span class="chip">🧼 Soaps</span><span class="chip">🍫 Chocolates</span>
         <span class="chip">🧴 Accessories</span><span class="chip">🥤 Beverages</span>
@@ -495,7 +496,7 @@
   <nav class="dash-nav">
     <div class="nav-brand">
       <div class="nav-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 4v12h12M4 10h7" stroke="#1a1208" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      <span class="nav-title">Lasya Traders — Client Portal</span>
+      <span class="nav-title">Lasha Traders Shop Tandur — Client Portal</span>
     </div>
     <div class="nav-right">
       <span class="nav-badge nb-owner">Store Owner</span>
@@ -550,7 +551,7 @@
     <nav class="dash-nav" style="background:rgba(15,12,7,.97);border-bottom:1px solid rgba(212,168,67,.15)">
       <div class="nav-brand">
         <div class="nav-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 4v12h12M4 10h7" stroke="#1a1208" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <span class="nav-title">Lasya Traders — Admin Panel</span>
+        <span class="nav-title">Lasha Traders Shop Tandur — Admin Panel</span>
       </div>
       <div class="nav-right">
         <span class="nav-badge nb-emp">Admin</span>
@@ -1431,7 +1432,7 @@ function renderRevStorageTable(){
 function exportRevenueJSON(){
   const data={
     exportedAt:new Date().toISOString(),
-    business:'Lasya Traders',
+    business:'Lasha Traders Shop Tandur',
     period:'Last 30 days',
     summary:buildRevStorageData().reduce((s,d)=>({totalOrders:s.totalOrders+d.orders,totalRevenue:s.totalRevenue+d.revenue,cashCollected:s.cashCollected+d.cashCollected}),{totalOrders:0,totalRevenue:0,cashCollected:0}),
     dailyBreakdown:buildRevStorageData(),
