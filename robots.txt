@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lasyatradersshops.netlify.app/sitemap.xml
