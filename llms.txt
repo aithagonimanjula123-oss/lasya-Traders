@@ -1,0 +1,13 @@
+# Lasya Traders
+
+> Lasya Traders is a wholesale grocery and store-supplies shop serving Chandur, Telangana, India.
+
+## Website
+- Homepage: https://lasyatradersshops.netlify.app/
+
+## Business
+- Name: Lasya Traders
+- Location served: Chandur, Telangana, India
+- Offering: Wholesale grocery and store supplies
+
+For current product availability, prices, and ordering details, use the website.
